@@ -10,7 +10,7 @@ class ITBank extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: FormularioTransferencia(),
+        body: ListaTransferencias(),
       ),
     );
   }
@@ -42,20 +42,24 @@ class FormularioTransferencia extends StatelessWidget {
           ),
           RaisedButton(
             onPressed: () {
-              final int numeroConta =
-                  int.tryParse(_controladorCampoNumeroConta.text);
-              final double valor = double.tryParse(_controladorCampoValor.text);
-
-              if (numeroConta != null && valor != null) {
-                final transferenciaCriada = Transferencia(valor, numeroConta);
-                debugPrint('$transferenciaCriada');
-              }
+              _criaTransferencia(context);
             },
             child: Text('Confirmar'),
           ),
         ],
       ),
     );
+  }
+
+  void _criaTransferencia(BuildContext context) {
+    final int numeroConta = int.tryParse(_controladorCampoNumeroConta.text);
+    final double valor = double.tryParse(_controladorCampoValor.text);
+
+    if (numeroConta != null && valor != null) {
+      final transferenciaCriada = Transferencia(valor, numeroConta);
+      debugPrint('$transferenciaCriada');
+      Navigator.pop(context, transferenciaCriada);
+    }
   }
 }
 
@@ -79,28 +83,48 @@ class Editor extends StatelessWidget {
           labelText: rotulo,
           hintText: dica,
         ),
+        keyboardType: TextInputType.number,
       ),
     );
   }
 }
 
-class ListadeTransferencias extends StatelessWidget {
+class ListaTransferencias extends StatefulWidget {
+  final List<Transferencia> _transferencias = List();
+
+  @override
+  State<StatefulWidget> createState() {
+    return ListaTransferenciasState();
+  }
+}
+
+class ListaTransferenciasState extends State<ListaTransferencias> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Transferências'),
       ),
-      body: Column(
-        children: <Widget>[
-          ItemTranferencia(Transferencia(10000.00, 111111)),
-          ItemTranferencia(Transferencia(1345.00, 222222)),
-          ItemTranferencia(Transferencia(654.00, 3333333)),
-          ItemTranferencia(Transferencia(934.00, 4444444)),
-        ],
+      body: ListView.builder(
+        itemCount: widget._transferencias.length,
+        itemBuilder: (context, indice) {
+          final transferencia = widget._transferencias[indice];
+          return ItemTranferencia(transferencia);
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Future<Transferencia> future =
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return FormularioTransferencia();
+          }));
+
+          future.then((transferenciaRecebida) {
+            debugPrint('Chegou no then do Future');
+            debugPrint('$transferenciaRecebida');
+            setState(() => widget._transferencias.add(transferenciaRecebida));
+          });
+        },
         child: Icon(Icons.add),
       ),
     );
